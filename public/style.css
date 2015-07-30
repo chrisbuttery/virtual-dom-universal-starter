@@ -12,6 +12,11 @@
   color: purple;
 }
 
+.links a.active {
+  background-color: magenta;
+  color: purple;
+}
+
 .links {
   margin-bottom: 1em;
 }
