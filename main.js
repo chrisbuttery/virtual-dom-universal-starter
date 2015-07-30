@@ -1,14 +1,22 @@
 var h = require('virtual-dom/h')
+var xtend = require('xtend')
+
 var main = require('main-loop')
-var loop = main({ n: 0 }, render, require('virtual-dom'))
-document.querySelector('#content').appendChild(loop.target)
+var state = {
+  path: location.pathname
+}
+var router = require('./router.js')
+var loop = main(state, render, require('virtual-dom'))
+var target = document.querySelector('#content')
+target.parentNode.replaceChild(loop.target, target)
+
+var show = require('single-page')(function (href) {
+  loop.update(xtend({ path: href }))
+})
+require('catch-links')(window, show)
 
 function render (state) {
-  return h('div', [
-    h('h1', 'clicked ' + state.n + ' times'),
-    h('button', { onclick: onclick }, 'click me!')
-  ])
-  function onclick () {
-    loop.update({ n: state.n + 1 })
-  }
+  var m = router.match(state.path)
+  if (!m) return h('div.error', 'not found')
+  else return m.fn(xtend(m, { state: state }))
 }
