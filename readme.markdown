@@ -10,6 +10,10 @@ using [main-loop](https://npmjs.com/package/main-loop),
 and [browserify](http://browserify.org)/[watchify](https://npmjs.com/package/watchify)
 with [npm run scripts](http://substack.net/task_automation_with_npm_run)
 
+This application renders html from the server on the first page load, and then
+renders each additional page load completely on the client, updating the address
+bar automatically with html pushState.
+
 # quick start
 
 ```
