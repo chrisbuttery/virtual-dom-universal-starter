@@ -26,20 +26,106 @@ $ npm start
 
 # starter code
 
+## browser code
+
 ``` js
 var h = require('virtual-dom/h')
+var xtend = require('xtend')
+
 var main = require('main-loop')
-var loop = main({ n: 0 }, render, require('virtual-dom'))
-document.querySelector('#content').appendChild(loop.target)
+var state = {
+  path: location.pathname
+}
+var router = require('./router.js')
+var loop = main(state, render, require('virtual-dom'))
+var target = document.querySelector('#content')
+target.parentNode.replaceChild(loop.target, target)
+
+var show = require('single-page')(function (href) {
+  loop.update(xtend({ path: href }))
+})
+require('catch-links')(window, show)
 
 function render (state) {
-  return h('div', [
-    h('h1', 'clicked ' + state.n + ' times'),
-    h('button', { onclick: onclick }, 'click me!')
-  ])
-  function onclick () {
-    loop.update({ n: state.n + 1 })
+  var m = router.match(state.path)
+  if (!m) return h('div.error', 'not found')
+  else return m.fn(xtend(m, { state: state }))
+}
+```
+
+## server code
+
+``` js
+var fs = require('fs')
+var path = require('path')
+var xtend = require('xtend')
+var hyperstream = require('hyperstream')
+
+var ecstatic = require('ecstatic')
+var st = ecstatic(path.join(__dirname, 'public'))
+var createElement = require('virtual-dom/create-element')
+
+var http = require('http')
+var router = require('./router.js')
+
+var server = http.createServer(function (req, res) {
+  var state = { path: req.url }
+  var m = router.match(req.url)
+  if (m) {
+    var elem = createElement(m.fn(xtend(m, { state: state })))
+    read('index.html').pipe(hyperstream({
+      '#content': elem.toString()
+    })).pipe(res)
   }
+  else st(req, res)
+})
+server.listen(8000)
+
+function read (x) {
+  return fs.createReadStream(path.join(__dirname, 'public', x))
+}
+```
+
+## shared routing code
+
+``` js
+var h = require('virtual-dom/h')
+var router = require('routes')()
+module.exports = router
+
+router.addRoute('/', function (m) {
+  return layout(m.state, h('div', 'welcome!'))
+})
+
+router.addRoute('/wow', function (m) {
+  return layout(m.state, h('div', 'wowsers!'))
+})
+
+router.addRoute('/amaze', function (m) {
+  return layout(m.state, h('div', [
+    h('div', 'such universal javascript!'),
+    h('div', 'very client server')
+  ]))
+})
+
+function layout (state, page) {
+  var links = [ '/', '/wow', '/amaze' ]
+  var titles = {
+    '/': 'home',
+    '/wow': 'wow',
+    '/amaze': 'amaze'
+  }
+  return h('div', [
+    h('h1', titles[state.path]),
+    h('div.links', links.map(function (href) {
+      return h(
+        'a' + (state.path === href ? '.active' : ''),
+        { href: href },
+        titles[href]
+      )
+    })),
+    page
+  ])
 }
 ```
 
