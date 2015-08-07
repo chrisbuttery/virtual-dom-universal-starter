@@ -15,7 +15,8 @@
     "single-page": "^1.0.0",
     "uglifyjs": "~2.4.10",
     "virtual-dom": "~2.0.1",
-    "watchify": "^3.3.1"
+    "watchify": "^3.3.1",
+    "xtend": "^4.0.0"
   },
   "license": "public domain"
 }
